@@ -4,13 +4,15 @@ import com.example.dddcomponents.sharedKernel.Aggregate;
 import com.example.dddcomponents.sharedKernel.AggregateRoot;
 
 @Aggregate
-public class Reservation extends AggregateRoot<String> {
+public class RoomReservation extends AggregateRoot<String> {
 
-    public Reservation(String id) {
+    public RoomReservation(String id) {
         super(id);
     }
 
 
-
+    public void acceptReservationRequest(Object reservationRequest) {
+        //..
+    }
 
 }
