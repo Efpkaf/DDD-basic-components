@@ -8,7 +8,7 @@ import java.util.*
 
 @Aggregate
 class RoomReservations(id: String?) : AggregateRoot<String>() {
-    private lateinit var reservations: List<TimeRange>
+    private val reservations: MutableList<TimeRange> = Collections.emptyList()
 
     //newReservationFrom newReservationTo
     fun acceptReservationRequest(reservationRequest: ReservationRequest): RoomHasBeenReserved {
@@ -19,6 +19,7 @@ class RoomReservations(id: String?) : AggregateRoot<String>() {
                 throw AlreadyExistingReservationForThisDateException()
             }
         }
+
         reservations.add(reservationRequest.timeRange)
         return RoomHasBeenReserved(id, reservationRequest.timeRange)
     }
