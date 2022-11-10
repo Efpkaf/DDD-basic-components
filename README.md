@@ -1,1 +1,3 @@
 # DDD-basic-components
+
+init
