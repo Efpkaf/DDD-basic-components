@@ -4,8 +4,9 @@ import java.util.*
 import java.util.function.Function
 
 class ReservationRequest {
+    lateinit var id: UUID
     lateinit var timeRange: TimeRange
-    lateinit var roomNumber: Number
+    lateinit var roomNumber: String
     lateinit var state: ReservationRequestState
 
     fun applyReservationRequest(callback: Function<ReservationRequestDTO, ReservationRequestState>) {
@@ -17,10 +18,11 @@ class ReservationRequest {
 
     companion object {
         fun createReservationRequest(
-            roomNumber: Number,
+            roomNumber: String,
             timeRange: TimeRange
         ): ReservationRequest {
             val reservationRequest = ReservationRequest()
+            reservationRequest.id = UUID.randomUUID()
             reservationRequest.state = ReservationRequestState.NEW
             reservationRequest.timeRange = timeRange
             reservationRequest.roomNumber = roomNumber
@@ -29,7 +31,7 @@ class ReservationRequest {
     }
 }
 
-data class ReservationRequestDTO(val roomNumber: Number, val timeRange: TimeRange);
+data class ReservationRequestDTO(val roomNumber: String, val timeRange: TimeRange);
 data class TimeRange private constructor(val timeFrom: Date, val timeTo: Date) {
 
     companion object {
