@@ -30,7 +30,17 @@ class ReservationRequest {
 }
 
 data class ReservationRequestDTO(val roomNumber: Number, val timeRange: TimeRange);
-data class TimeRange(val timeFrom: Date, val timeTo: Date)
+data class TimeRange private constructor(val timeFrom: Date, val timeTo: Date) {
+
+    companion object {
+        fun createTimeRange(timeFrom: Date, timeTo: Date): TimeRange {
+            if (!timeTo.after(timeFrom)) {
+                throw IllegalArgumentException("Range must be positive")
+            }
+            return TimeRange(timeFrom, timeTo)
+        }
+    }
+}
 
 
 enum class ReservationRequestState {
