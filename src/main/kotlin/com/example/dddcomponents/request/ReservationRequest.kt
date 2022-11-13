@@ -1,7 +1,10 @@
 package com.example.dddcomponents.request
 
+import com.example.dddcomponents.sharedKernel.DomainEvent
 import java.util.*
-import java.util.function.Function
+import java.util.Collections.emptyList
+import java.util.function.Consumer
+
 
 class ReservationRequest {
     lateinit var id: UUID
@@ -9,11 +12,22 @@ class ReservationRequest {
     lateinit var roomNumber: String
     lateinit var state: ReservationRequestState
 
-    fun applyReservationRequest(callback: Function<ReservationRequestDTO, ReservationRequestState>) {
-        val newState = callback.apply(
+    fun reject(): List<DomainEvent> {
+        state = ReservationRequestState.REJECTED
+        return emptyList()
+    }
+
+    fun applyReservationRequest(callback: Consumer<ReservationRequestDTO>): List<DomainEvent> {
+        if (state != ReservationRequestState.NEW) {
+            throw IllegalStateException("reservation already applied")
+        }
+
+        callback.accept(
             ReservationRequestDTO(roomNumber, timeRange)
         )
-        this.state = newState
+
+        this.state = ReservationRequestState.ACCEPTED
+        return emptyList()
     }
 
     companion object {
