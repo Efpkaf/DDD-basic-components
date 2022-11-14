@@ -1,6 +1,8 @@
 package com.example.dddcomponents.request
 
 import com.example.dddcomponents.sharedKernel.DomainEvent
+import com.example.dddcomponents.user.Actor
+import com.example.dddcomponents.user.ActorType
 import java.util.*
 import java.util.Collections.emptyList
 import java.util.function.Consumer
@@ -8,44 +10,76 @@ import java.util.function.Consumer
 
 class ReservationRequest {
     lateinit var id: UUID
+
     lateinit var timeRange: TimeRange
     lateinit var roomNumber: String
+
+    lateinit var actor: Actor
     lateinit var state: ReservationRequestState
 
-    fun reject(): List<DomainEvent> {
+    fun reject(actor: Actor): List<DomainEvent> {
+        assertActorMayRejectReservationRequest(actor)
+
         state = ReservationRequestState.REJECTED
-        return emptyList()
+        return listOf(ReservationRequestRejected(id))
     }
 
-    fun applyReservationRequest(callback: Consumer<ReservationRequestDTO>): List<DomainEvent> {
-        if (state != ReservationRequestState.NEW) {
-            throw IllegalStateException("reservation already applied")
+    fun assertActorMayRejectReservationRequest(actor: Actor) {
+        when (actor.actorType) {
+            ActorType.ADMIN -> {}
+            ActorType.USER -> {
+                if (actor.actorId != this.actor.actorId)
+                    throw ThisActorMayNotRejectReservationRequest()
+            }
         }
+    }
+
+    fun acceptReservationRequest(actor: Actor, callback: Consumer<ReservationRequestDTO>): List<DomainEvent> {
+        assertActorMayApplyReservationRequest(actor)
+        assertReservationRequestIsntAlreadyAcceptedOrRejected()
 
         callback.accept(
-            ReservationRequestDTO(roomNumber, timeRange)
+            ReservationRequestDTO(actor, roomNumber, timeRange)
         )
 
         this.state = ReservationRequestState.ACCEPTED
-        return emptyList()
+
+        return listOf(ReservationRequestAccepted(id))
+    }
+
+    private fun assertReservationRequestIsntAlreadyAcceptedOrRejected() {
+        if (state != ReservationRequestState.NEW) {
+            throw ReservationAlreadyRejectedOrAccepted()
+        }
+    }
+
+    private fun assertActorMayApplyReservationRequest(actor: Actor) {
+        if (actor.actorType != ActorType.ADMIN)
+            throw ThisActorMayNotAcceptReservationRequest()
     }
 
     companion object {
         fun createReservationRequest(
+            actor: Actor,
             roomNumber: String,
             timeRange: TimeRange
-        ): ReservationRequest {
+        ): Pair<ReservationRequest, List<DomainEvent>> {
             val reservationRequest = ReservationRequest()
+
             reservationRequest.id = UUID.randomUUID()
             reservationRequest.state = ReservationRequestState.NEW
+
+            reservationRequest.actor = actor
+
             reservationRequest.timeRange = timeRange
             reservationRequest.roomNumber = roomNumber
-            return reservationRequest
+
+            return Pair(reservationRequest, listOf(ReservationRequestCreated(reservationRequest.id)))
         }
     }
 }
 
-data class ReservationRequestDTO(val roomNumber: String, val timeRange: TimeRange);
+data class ReservationRequestDTO(val actor: Actor, val roomNumber: String, val timeRange: TimeRange);
 data class TimeRange private constructor(val timeFrom: Date, val timeTo: Date) {
 
     companion object {
@@ -62,3 +96,11 @@ data class TimeRange private constructor(val timeFrom: Date, val timeTo: Date) {
 enum class ReservationRequestState {
     NEW, ACCEPTED, REJECTED
 }
+
+class ReservationRequestCreated(id: UUID) : DomainEvent
+class ReservationRequestAccepted(id: UUID) : DomainEvent
+class ReservationRequestRejected(id: UUID) : DomainEvent
+
+class ThisActorMayNotRejectReservationRequest : Exception()
+class ThisActorMayNotAcceptReservationRequest : Exception()
+class ReservationAlreadyRejectedOrAccepted : Exception()

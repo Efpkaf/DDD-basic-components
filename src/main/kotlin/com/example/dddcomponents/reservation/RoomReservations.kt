@@ -5,44 +5,70 @@ import com.example.dddcomponents.sharedKernel.Aggregate
 import com.example.dddcomponents.sharedKernel.AggregateRoot
 import com.example.dddcomponents.sharedKernel.DomainEvent
 import com.example.dddcomponents.sharedKernel.Entity
+import com.example.dddcomponents.user.Actor
+import com.example.dddcomponents.user.ActorType
 import java.util.*
 
 //TODO: Should we add Aggregate and Entity to names or just annotate?
 @Aggregate
-class RoomReservations(roomId: String) : AggregateRoot<String>(roomId) {
-    private val reservations: MutableList<Reservation> = Collections.emptyList()
+class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
+    private val reservations: MutableList<Reservation> = LinkedList()
 
-    fun applyReservation(possibleReservation: Reservation): List<DomainEvent> {
+    fun applyReservation(currentActor: Actor, possibleReservation: Reservation): List<DomainEvent> {
         val events: MutableList<DomainEvent> = LinkedList()
 
+        assertOnlyAdminMayAcceptReservations(currentActor)
         assertReservationDoesNotOverlapExistingReservations(possibleReservation)
 
         events.addAll(possibleReservation.addToReservations(id, reservations))
         return events
     }
 
-    // TODO: Reservation should also have userId so we know who to notify
-    fun cancelReservation(reservationId: String): List<ReservationCancelled> {
-        val reservation = reservations.stream().filter { it.id.equals(reservationId) }.findFirst()
-
-        if (reservation.isEmpty) {
-            throw IllegalArgumentException("No such reservation")
-        }
-
-        reservations.remove(reservation.get())
-        return Arrays.asList(
-            ReservationCancelled(reservation.get().id)
-        )
-    }
-
     private fun assertReservationDoesNotOverlapExistingReservations(newReservation: Reservation) {
         if (reservations.stream().anyMatch { it.overlaps(newReservation) }) {
-            throw TimeSlotOverlaps()
+            throw AlreadyExistingReservationForThisTimeException()
         }
     }
+
+    private fun assertOnlyAdminMayAcceptReservations(currentActor: Actor) {
+        if (currentActor.actorType != ActorType.ADMIN) {
+            throw AcceptanceForbiddenForNotAdmin(currentActor.actorId)
+        }
+    }
+
+    fun cancelReservation(currentActor: Actor, reservationId: UUID): List<DomainEvent> {
+        val reservation = reservations.stream().filter { it.id == reservationId }.findFirst()
+            .orElseThrow { -> NoSuchReservation(reservationId) }
+
+        assertActorMayCancelReservation(currentActor, reservation)
+
+        reservations.remove(reservation)
+
+        val event: DomainEvent = when (currentActor.actorType) {
+            ActorType.ADMIN -> ReservationCancelledByAdmin(reservation.id, roomId, reservation.owner.actorId)
+            ActorType.USER -> ReservationCancelledByOwner(reservation.id, roomId, reservation.owner.actorId)
+        }
+
+        return listOf(event)
+    }
+
+    private fun assertActorMayCancelReservation(currentActor: Actor, reservation: Reservation) {
+        when (currentActor.actorType) {
+            ActorType.ADMIN -> {}
+            ActorType.USER -> {
+                if (reservation.owner.actorId != currentActor.actorId)
+                    throw RejectionForbiddenForNotOwner(
+                        reservation.id,
+                        currentActor.actorId
+                    )
+            }
+        }
+    }
+
 
     class Reservation(
         override val id: UUID,
+        val owner: Actor,
         val occurrencePolicy: OccurrencePolicy
     ) : Entity<UUID> {
         fun overlaps(reservation: Reservation): Boolean {
@@ -67,22 +93,35 @@ class RoomReservations(roomId: String) : AggregateRoot<String>(roomId) {
                 }
 
                 override fun onReservationAccepted(roomId: String): List<DomainEvent> =
-                    Arrays.asList(RoomHasBeenReserved(roomId, timeRange))
+                    listOf(RoomHasBeenReserved(roomId, timeRange))
             }
         }
 
         companion object {
-            fun createReservation(timeRange: TimeRange): Reservation {
-                return Reservation(UUID.randomUUID(), OccurrencePolicy.OneTimeOccurence(timeRange))
+            fun createReservation(actor: Actor, timeRange: TimeRange): Reservation {
+                return Reservation(UUID.randomUUID(), actor, OccurrencePolicy.OneTimeOccurence(timeRange))
             }
         }
     }
-
-    class Actor
 }
 
 // TODO: Should failure be signalled by Exception or event?
-class TimeSlotOverlaps() : Exception() {}
-// TODO: lShould we put all exceptions into the class?
 
-class ReservationCancelled(id: UUID) : DomainEvent {}
+class ReservationCancelledByAdmin(
+    val reservationId: UUID,
+    val roomId: String,
+    val ownerId: UUID
+) : DomainEvent {}
+
+class ReservationCancelledByOwner(
+    val reservationId: UUID,
+    val roomId: String,
+    val ownerId: UUID
+) : DomainEvent {}
+
+class AcceptanceForbiddenForNotAdmin(val actorId: UUID) : Exception()
+class RejectionForbiddenForNotOwner(val reservationId: UUID, val actorId: UUID) : Exception()
+class AlreadyExistingReservationForThisTimeException() : Exception() {}
+class NoSuchReservation(val reservationId: UUID) : Exception() {}
+
+// TODO: UUID should be some GenericId
