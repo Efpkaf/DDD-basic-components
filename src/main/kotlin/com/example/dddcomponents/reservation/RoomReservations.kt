@@ -24,15 +24,16 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         return events
     }
 
-    private fun assertReservationDoesNotOverlapExistingReservations(newReservation: Reservation) {
-        if (reservations.stream().anyMatch { it.overlaps(newReservation) }) {
-            throw AlreadyExistingReservationForThisTimeException()
-        }
-    }
 
     private fun assertOnlyAdminMayAcceptReservations(currentActor: Actor) {
         if (currentActor.actorType != ActorType.ADMIN) {
             throw AcceptanceForbiddenForNotAdmin(currentActor.actorId)
+        }
+    }
+
+    private fun assertReservationDoesNotOverlapExistingReservations(newReservation: Reservation) {
+        if (reservations.stream().anyMatch { it.overlaps(newReservation) }) {
+            throw AlreadyExistingReservationForThisTimeException()
         }
     }
 
