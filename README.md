@@ -1,3 +1,10 @@
 # DDD-basic-components
 
-init
+## Examples of building blocks
+
+Value Object: TimeRange?
+Entity: Reservation
+Policy: OccurrencePolicy
+Events: ???
+Aggregate: RoomReservations, ReservationRequest
+Repository: ???
