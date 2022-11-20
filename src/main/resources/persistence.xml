@@ -1,0 +1,14 @@
+<entity-mappings xmlns="http://xmlns.jcp.org/xml/ns/persistence/orm" version="2.2">
+    <entity class="com.example.dddcomponents.reservationRoomReservationsAggregate">
+        <attributes>
+            <id name="roomId"/>
+            <one-to-many name="reservations"></one-to-many>
+        </attributes>
+    </entity>
+    <entity class="com.example.dddcomponents.reservation.RoomReservationsAggregateReservationEntity">
+        <attributes>
+            <id name="id"/>
+
+        </attributes>
+    </entity>
+</entity-mappings>

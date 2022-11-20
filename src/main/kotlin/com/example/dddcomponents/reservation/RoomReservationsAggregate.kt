@@ -1,9 +1,6 @@
 package com.example.dddcomponents.reservation
 
-import com.example.dddcomponents.sharedKernel.Aggregate
-import com.example.dddcomponents.sharedKernel.AggregateRoot
 import com.example.dddcomponents.sharedKernel.DomainEvent
-import com.example.dddcomponents.sharedKernel.Entity
 import com.example.dddcomponents.user.Actor
 import com.example.dddcomponents.user.ActorType
 import org.springframework.data.domain.DomainEvents
@@ -11,22 +8,29 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.stream.IntStream
+import javax.persistence.*
 import kotlin.streams.toList
 
 //TODO: Should we add Aggregate and Entity to names or just annotate?
-@Aggregate
-class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
+@Entity
+class RoomReservationsAggregate(@Id val roomId: String) {
     @get:DomainEvents
+    @Transient
     val domainEvents: MutableList<DomainEvent> = LinkedList()
 
-    private val reservations: MutableList<Reservation> = LinkedList()
+    @OneToMany(cascade = [CascadeType.ALL])
+    var reservations: MutableList<ReservationEntity> = LinkedList()
 
-    fun requestReservation(reservationRequestDTO: RequestReservationDto): UUID {
-        val reservation = Reservation(
+    fun requestReservation(
+        actor: Actor,
+        timeRange: TimeRange,
+        occurrencePolicy: ReservationEntity.OccurrencePolicy
+    ): UUID {
+        val reservation = ReservationEntity(
             UUID.randomUUID(),
-            reservationRequestDTO.actor,
-            reservationRequestDTO.timeRange,
-            reservationRequestDTO.occurencePolicy
+            actor,
+            timeRange,
+            occurrencePolicy
         )
 
         reservations.add(
@@ -36,8 +40,8 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         domainEvents.add(
             ReservationRequestCreated(
                 reservation.id,
-                reservationRequestDTO.timeRange,
-                reservationRequestDTO.occurencePolicy
+                timeRange,
+                occurrencePolicy
             )
         )
 
@@ -66,7 +70,7 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         }
     }
 
-    private fun assertReservationDoesNotOverlapExistingReservations(newReservation: Reservation) {
+    private fun assertReservationDoesNotOverlapExistingReservations(newReservation: ReservationEntity) {
         if (reservations.stream()
                 .filter { x -> x.reservationState == ReservationState.ACCEPTED }
                 .anyMatch { it.overlaps(newReservation) }
@@ -88,7 +92,7 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         domainEvents.add(ReservationCancelled(reservationId))
     }
 
-    private fun assertActorMayCancelReservation(currentActor: Actor, reservation: Reservation) {
+    private fun assertActorMayCancelReservation(currentActor: Actor, reservation: ReservationEntity) {
         when (currentActor.actorType) {
             ActorType.ADMIN -> {}
             ActorType.USER -> {
@@ -101,7 +105,7 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         }
     }
 
-    private fun handleRejectionNotifications(currentActor: Actor, reservation: Reservation) {
+    private fun handleRejectionNotifications(currentActor: Actor, reservation: ReservationEntity) {
         domainEvents.addAll(
             when (reservation.reservationState) {
                 ReservationState.PENDING -> when (currentActor.actorType) {
@@ -134,14 +138,17 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
         )
     }
 
-    class Reservation(
-        override val id: UUID,
-        val owner: Actor,
-        val timeRange: TimeRange,
-        val occurrencePolicy: OccurrencePolicy,
+    @Entity
+    class ReservationEntity(
+        @Id
+        var id: UUID,
+        var owner: Actor,
+        var timeRange: TimeRange,
+        @Embedded
+        var occurrencePolicy: OccurrencePolicy,
         var reservationState: ReservationState = ReservationState.PENDING
-    ) : Entity<UUID> {
-        fun overlaps(reservation: Reservation): Boolean {
+    ) {
+        fun overlaps(reservation: ReservationEntity): Boolean {
             val allThisRanges = occurrencePolicy.generateAllTimeRanges(timeRange)
             val allThatRanges = reservation.occurrencePolicy.generateAllTimeRanges(reservation.timeRange)
 
@@ -156,16 +163,21 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
             return false
         }
 
-        sealed interface OccurrencePolicy {
-            fun generateAllTimeRanges(initialTimeRange: TimeRange): List<TimeRange>
+        @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+        open class OccurrencePolicy() {
+            open fun generateAllTimeRanges(initialTimeRange: TimeRange): List<TimeRange> = emptyList()
 
-            object OneTimeOccurrence : OccurrencePolicy {
+            @Embeddable
+            open class OneTimeOccurrence() : OccurrencePolicy() {
                 override fun generateAllTimeRanges(initialTimeRange: TimeRange): List<TimeRange> {
                     return listOf(initialTimeRange)
                 }
+
+                override fun equals(other: Any?): Boolean = other is OneTimeOccurrence
             }
 
-            class WeeklyOccurrence(val until: Instant) : OccurrencePolicy {
+            @Embeddable
+            class WeeklyOccurrence(var until: Instant) : OccurrencePolicy() {
                 override fun generateAllTimeRanges(initialTimeRange: TimeRange): List<TimeRange> =
                     IntStream.iterate(0) { n -> n + 1 }
                         .mapToObj { advance ->
@@ -181,7 +193,7 @@ class RoomReservations(val roomId: String) : AggregateRoot<String>(roomId) {
     }
 
     companion object {
-        fun createRoom(roomName: String) = RoomReservations(roomName)
+        fun createRoom(roomName: String) = RoomReservationsAggregate(roomName)
     }
 }
 
@@ -204,7 +216,7 @@ data class RequestedToNotifyAdminsAboutCanceledReservation(
 data class ReservationRequestCreated(
     val id: UUID,
     val timeRange: TimeRange,
-    val occurrencePolicy: RoomReservations.Reservation.OccurrencePolicy
+    val occurrencePolicy: RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
 ) : DomainEvent
 
 data class ReservationRequestAccepted(val id: UUID) : DomainEvent

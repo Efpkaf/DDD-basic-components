@@ -1,8 +1,9 @@
 package com.example.dddcomponents.reservation
 
 import java.time.Instant
+import javax.persistence.Embeddable
 
-// TODO: UUID should be some GenericId
+@Embeddable
 data class TimeRange private constructor(val timeFrom: Instant, val timeTo: Instant) {
     companion object {
         fun createTimeRange(timeFrom: Instant, timeTo: Instant): TimeRange {
