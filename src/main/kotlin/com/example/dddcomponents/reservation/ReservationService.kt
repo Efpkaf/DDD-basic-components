@@ -5,7 +5,7 @@ import com.example.dddcomponents.sharedKernel.DomainService
 import java.util.*
 
 @DomainService
-class ReservationService {
+object ReservationService {
     fun changeRoom(
         fromRoom: RoomReservationsAggregate,
         toRoom: RoomReservationsAggregate,
@@ -16,15 +16,16 @@ class ReservationService {
             ?: throw NoSuchReservation(reservationId)
 
         fromRoom.reservations.remove(reservation)
+        fromRoom.domainEvents.add(ReservationRemoved(fromRoom.roomId, reservationId))
 
         toRoom.requestReservation(
             reservation.owner,
             reservation.timeRange,
             reservation.occurrencePolicy
         )
-
-        fromRoom.domainEvents.add(ReservationMoved(fromRoom.roomId, toRoom.roomId, reservationId))
+        toRoom.domainEvents.add(ReservationInserted(toRoom.roomId, reservationId))
     }
 }
 
-data class ReservationMoved(val fromRoomId: String, val toRoomId: String, val reservationId: UUID) : DomainEvent
+data class ReservationRemoved(val fromRoomId: String, val reservationId: UUID) : DomainEvent
+data class ReservationInserted(val toRoomId: String, val reservationId: UUID) : DomainEvent
