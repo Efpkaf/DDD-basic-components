@@ -1,11 +1,14 @@
 package com.example.dddcomponents.reservation.readmodel
 
+import java.time.Instant
 import javax.persistence.*
 
 @Entity
 class ReservationCurrentStatus(
-    @Id var id: String,
-    var status: ReservationStatus
+    @Id var roomId: String,
+    var status: ReservationStatus,
+    val timeFrom: Instant,
+    val timeTo: Instant
 ) {
 
     fun cancel() {
