@@ -6,7 +6,6 @@ import java.util.*
 
 interface RoomReservationRepository : CrudRepository<RoomReservationsAggregate, String> {
 
-    @Query("""""")
-    fun findRoomByReservation(reservationId: UUID): RoomReservationsAggregate
+    fun findRoomByReservations(reservationId: UUID): RoomReservationsAggregate
 
 }

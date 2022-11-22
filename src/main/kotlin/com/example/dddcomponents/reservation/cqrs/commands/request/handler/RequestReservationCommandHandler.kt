@@ -5,14 +5,19 @@ import com.example.dddcomponents.reservation.cqrs.commands.request.RequestReserv
 import com.trendyol.kediatr.CommandHandler
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import javax.transaction.Transactional
 
 @Service
-class RequestReservationCommandHandler(
+open class RequestReservationCommandHandler(
     private val roomReservationRepository: RoomReservationRepository
 ) : CommandHandler<RequestReservationCommand> {
 
+    @Transactional
     override fun handle(command: RequestReservationCommand) {
         val room = roomReservationRepository.findByIdOrNull(command.roomId)
-        room?.requestReservation(command.actor, command.timeRange, command.occurrencePolicy)
+        room?.let {
+            it.requestReservation(command.actor, command.timeRange, command.occurrencePolicy)
+            roomReservationRepository.save(it)
+        }
     }
 }

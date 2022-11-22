@@ -9,7 +9,7 @@ data class CancelReservationCommandHandler(
 ) : CommandHandler<CancelReservationCommand> {
 
     override fun handle(command: CancelReservationCommand) {
-        val roomReservation = roomReservationRepository.findRoomByReservation(command.reservationId)
+        val roomReservation = roomReservationRepository.findRoomByReservations(command.reservationId)
 
         roomReservation.cancelReservation(command.actor, command.reservationId)
     }

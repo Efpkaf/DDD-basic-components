@@ -54,6 +54,7 @@ class RoomReservationsAggregate(@Id val roomId: String) {
         domainEvents.add(
             ReservationRequestCreated(
                 reservation.id,
+                roomId,
                 timeRange,
                 occurrencePolicy
             )
@@ -229,6 +230,7 @@ data class RequestedToNotifyAdminsAboutCanceledReservation(
 
 data class ReservationRequestCreated(
     val id: UUID,
+    val roomId: String,
     val timeRange: TimeRange,
     val occurrencePolicy: RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
 ) : DomainEvent

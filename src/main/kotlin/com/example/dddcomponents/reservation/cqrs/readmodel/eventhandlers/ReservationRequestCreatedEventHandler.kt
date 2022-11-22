@@ -14,6 +14,14 @@ data class ReservationRequestCreatedEventHandler(
 
     @TransactionalEventListener
     fun handle(event: ReservationRequestCreated) {
-        reservationStatusRepository.save(ReservationCurrentStatus(event.id.toString(), ReservationStatus.PENDING, event.timeRange.timeFrom, event.timeRange.timeTo))
+        reservationStatusRepository.save(
+            ReservationCurrentStatus(
+                event.id,
+                event.roomId,
+                ReservationStatus.PENDING,
+                event.timeRange.timeFrom,
+                event.timeRange.timeTo
+            )
+        )
     }
 }

@@ -7,17 +7,14 @@ import java.time.Instant
 
 @Repository
 interface ReservationStatusRepository: CrudRepository<ReservationCurrentStatus, String> {
-
-    @Query("""
-        select room from ReservationCurrentStatus room where room.roomId = :roomId
-    """)
-    fun findAllAcceptedForRoom(roomId: String): List<ReservationCurrentStatus>
-
     @Query(
         """
-        select room from ReservationCurrentStatus room where room.roomId = :roomId and room.timeFrom >= :from and room.timeTo <= :to and room.status = 'ACCEPTED'
+        select room from ReservationCurrentStatus room 
+        where room.roomId = :roomId 
+        and room.timeFrom >= :timeFrom and room.timeTo <= :timeTo 
+        and room.status in :status
     """
     )
-    fun findAcceptedForTimeRange(roomId: String, from: Instant, to: Instant): ReservationCurrentStatus
+    fun findForTimeRange(roomId: String, status: List<ReservationStatus>, timeFrom: Instant, timeTo: Instant): List<ReservationCurrentStatus>
 
 }

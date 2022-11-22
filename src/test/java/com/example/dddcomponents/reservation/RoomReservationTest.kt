@@ -36,7 +36,7 @@ class RoomReservationTest {
 
         Assertions.assertEquals(
             listOf(
-                ReservationRequestCreated(reservationId, timeRange, OccurrencePolicy.OneTimeOccurrence()),
+                ReservationRequestCreated(reservationId, "A102", timeRange, OccurrencePolicy.OneTimeOccurrence()),
                 ReservationRequestAccepted(reservationId),
                 RequestedToNotifyAdminsAboutCanceledReservation(reservationId, "A102"),
                 ReservationCancelled(reservationId)
