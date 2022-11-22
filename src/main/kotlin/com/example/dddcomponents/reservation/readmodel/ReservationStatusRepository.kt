@@ -13,9 +13,11 @@ interface ReservationStatusRepository: CrudRepository<ReservationCurrentStatus, 
     """)
     fun findAllAcceptedForRoom(roomId: String): List<ReservationCurrentStatus>
 
-    @Query("""
+    @Query(
+        """
         select room from ReservationCurrentStatus room where room.roomId = :roomId and room.timeFrom >= :from and room.timeTo <= :to and room.status = 'ACCEPTED'
-    """)
-    fun findAcceptedForTimeRange(roomId: String, from: Instant, to: Instant): List<ReservationCurrentStatus>
+    """
+    )
+    fun findAcceptedForTimeRange(roomId: String, from: Instant, to: Instant): ReservationCurrentStatus
 
 }
