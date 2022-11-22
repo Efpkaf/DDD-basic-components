@@ -15,17 +15,8 @@ object ReservationService {
             .find { it.id == reservationId }
             ?: throw NoSuchReservation(reservationId)
 
-        fromRoom.reservations.remove(reservation)
-        fromRoom.domainEvents.add(ReservationRemoved(fromRoom.roomId, reservationId))
+        fromRoom.remove(reservation)
 
-        toRoom.requestReservation(
-            reservation.owner,
-            reservation.timeRange,
-            reservation.occurrencePolicy
-        )
-        toRoom.domainEvents.add(ReservationInserted(toRoom.roomId, reservationId))
+        toRoom.foo(reservation)
     }
 }
-
-data class ReservationRemoved(val fromRoomId: String, val reservationId: UUID) : DomainEvent
-data class ReservationInserted(val toRoomId: String, val reservationId: UUID) : DomainEvent
