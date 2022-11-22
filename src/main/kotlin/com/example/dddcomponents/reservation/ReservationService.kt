@@ -1,6 +1,5 @@
 package com.example.dddcomponents.reservation
 
-import com.example.dddcomponents.sharedKernel.DomainEvent
 import com.example.dddcomponents.sharedKernel.DomainService
 import java.util.*
 
@@ -17,6 +16,6 @@ object ReservationService {
 
         fromRoom.remove(reservation)
 
-        toRoom.foo(reservation)
+        toRoom.add(reservation)
     }
 }

@@ -21,7 +21,7 @@ class RoomReservationsAggregate(@Id val roomId: String) {
     @OneToMany(cascade = [CascadeType.ALL])
     var reservations: MutableList<ReservationEntity> = LinkedList()
 
-    fun foo(reservation: ReservationEntity) {
+    fun add(reservation: ReservationEntity) {
         requestReservation(
             reservation.owner,
             reservation.timeRange,

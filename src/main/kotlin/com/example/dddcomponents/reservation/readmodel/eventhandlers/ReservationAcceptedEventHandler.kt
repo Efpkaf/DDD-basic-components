@@ -10,7 +10,7 @@ import org.springframework.transaction.event.TransactionalEventListener
 data class ReservationAcceptedEventHandler(
     val reservationStatusRepository: ReservationStatusRepository
 ) {
-
+// [ ] commandy któe tworzą rezerwacje (bez controllerow, command handler)
     @TransactionalEventListener
     fun handle(event: ReservationRequestAccepted) {
         val reservation = reservationStatusRepository.findByIdOrNull(event.id.toString())
