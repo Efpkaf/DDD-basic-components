@@ -1,6 +1,7 @@
 package com.example.dddcomponents.reservation
 
-import com.example.dddcomponents.reservation.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
+import com.example.dddcomponents.reservation.domain.*
+import com.example.dddcomponents.reservation.domain.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
 import com.example.dddcomponents.user.Actor
 import com.example.dddcomponents.user.ActorType
 import org.junit.jupiter.api.Assertions
@@ -36,7 +37,7 @@ class RoomReservationTest {
         Assertions.assertEquals(
             listOf(
                 ReservationRequestCreated(reservationId, timeRange, OccurrencePolicy.OneTimeOccurrence()),
-                ReservationRequestAccepted(reservationId, reservation.timeRange.timeFrom, reservation.timeRange.timeTo),
+                ReservationRequestAccepted(reservationId),
                 RequestedToNotifyAdminsAboutCanceledReservation(reservationId, "A102"),
                 ReservationCancelled(reservationId)
             ),

@@ -1,13 +1,16 @@
 package com.example.dddcomponents.reservation
 
-import com.example.dddcomponents.reservation.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
+import com.example.dddcomponents.reservation.domain.ReservationCancelled
+import com.example.dddcomponents.reservation.domain.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
+import com.example.dddcomponents.reservation.domain.RoomReservationRepository
+import com.example.dddcomponents.reservation.domain.RoomReservationsAggregate
+import com.example.dddcomponents.reservation.domain.TimeRange
 import com.example.dddcomponents.user.Actor
 import com.example.dddcomponents.user.ActorType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.event.EventListener
 import java.time.Instant
 import java.util.*
 import javax.transaction.Transactional
