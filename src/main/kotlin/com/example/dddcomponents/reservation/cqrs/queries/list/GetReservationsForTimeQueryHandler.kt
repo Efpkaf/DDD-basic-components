@@ -4,18 +4,15 @@ import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationCurrentSt
 import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationStatusRepository
 import com.trendyol.kediatr.QueryHandler
 import org.springframework.stereotype.Service
+import javax.transaction.Transactional
 
 @Service
-data class GetReservationsForTimeQueryHandler(
+open class GetReservationsForTimeQueryHandler(
     val reservationStatusRepository: ReservationStatusRepository
 ) : QueryHandler<GetReservationsForTimeQuery, List<ReservationCurrentStatus>> {
 
+    @Transactional
     override fun handle(query: GetReservationsForTimeQuery): List<ReservationCurrentStatus> {
-        return reservationStatusRepository.findForTimeRange(
-            query.roomId,
-            query.status,
-            query.range.timeFrom,
-            query.range.timeTo
-        );
+        return reservationStatusRepository.findAll().toList()
     }
 }

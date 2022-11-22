@@ -4,17 +4,17 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import java.time.Instant
+import java.util.*
 
 @Repository
-interface ReservationStatusRepository: CrudRepository<ReservationCurrentStatus, String> {
+interface ReservationStatusRepository: CrudRepository<ReservationCurrentStatus, UUID> {
     @Query(
         """
         select room from ReservationCurrentStatus room 
         where room.roomId = :roomId 
-        and room.timeFrom >= :timeFrom and room.timeTo <= :timeTo 
         and room.status in :status
     """
     )
-    fun findForTimeRange(roomId: String, status: List<ReservationStatus>, timeFrom: Instant, timeTo: Instant): List<ReservationCurrentStatus>
+    fun findForTimeRange(roomId: String, status: List<ReservationStatus>): List<ReservationCurrentStatus>
 
 }

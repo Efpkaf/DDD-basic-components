@@ -1,5 +1,6 @@
 package com.example.dddcomponents.reservation
 
+import com.example.dddcomponents.reservation.cqrs.commands.accept.AcceptReservationCommand
 import com.example.dddcomponents.reservation.cqrs.commands.accept.handler.AcceptReservationCommandHandler
 import com.example.dddcomponents.reservation.cqrs.commands.request.RequestReservationCommand
 import com.example.dddcomponents.reservation.cqrs.commands.request.handler.RequestReservationCommandHandler
@@ -7,7 +8,9 @@ import com.example.dddcomponents.reservation.cqrs.commands.room.CreateRoomComman
 import com.example.dddcomponents.reservation.cqrs.commands.room.CreateRoomCommandHandler
 import com.example.dddcomponents.reservation.cqrs.queries.list.GetReservationsForTimeQuery
 import com.example.dddcomponents.reservation.cqrs.queries.list.GetReservationsForTimeQueryHandler
+import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationCurrentStatus
 import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationStatus
+import com.example.dddcomponents.reservation.domain.RoomReservationRepository
 import com.example.dddcomponents.reservation.domain.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
 import com.example.dddcomponents.reservation.domain.TimeRange
 import com.example.dddcomponents.user.Actor
@@ -34,16 +37,15 @@ open class RoomReservationAcceptanceTest {
     @Autowired
     lateinit var acceptReservationCommandHandler: AcceptReservationCommandHandler
 
-
     @Test
-    open fun givenRoomReservationWhenReservationCreatedAndAcceptedAndCanceledThenCorrectEventsShouldBeSaved() {
+    open fun testProcess() {
         val roomId = "A102"
         val user = Actor(UUID.randomUUID(), ActorType.USER)
         val admin = Actor(UUID.randomUUID(), ActorType.ADMIN)
         val timeRange = TimeRange.createTimeRange(Instant.ofEpochSecond(999), Instant.ofEpochSecond(2000))
 
         createRoomCommandHandler.handle(CreateRoomCommand(roomId))
-        
+
         requestReservationCommandHandler.handle(
             RequestReservationCommand(
                 roomId,
@@ -64,36 +66,30 @@ open class RoomReservationAcceptanceTest {
             )
         )
 
-        Assertions.assertEquals(0, results.size)
+        val reservationCurrentStatus = results.first()
 
-//        acceptReservationCommandHandler.handle(AcceptReservationCommand())
+        acceptReservationCommandHandler.handle(
+            AcceptReservationCommand(
+                reservationCurrentStatus.id,
+                admin
+            )
+        )
 
 
-//
-//        val reservationId = reservation.requestReservation(
-//            user,
-//            timeRange,
-//            OccurrencePolicy.OneTimeOccurrence()
-//        )
-//
-//        reservation.acceptReservation(
-//            admin,
-//            reservationId
-//        )
-//
-//        reservation.cancelReservation(
-//            user,
-//            reservationId
-//        )
-//
-//        Assertions.assertEquals(
-//            listOf(
-//                ReservationRequestCreated(reservationId, timeRange, OccurrencePolicy.OneTimeOccurrence()),
-//                ReservationRequestAccepted(reservationId),
-//                RequestedToNotifyAdminsAboutCanceledReservation(reservationId, "A102"),
-//                ReservationCancelled(reservationId)
-//            ),
-//            reservation.domainEvents
-//        )
+        val newResults = getReservationsForTimeQueryHandler.handle(
+            GetReservationsForTimeQuery(
+                roomId,
+                TimeRange.createTimeRange(
+                    Instant.ofEpochSecond(0),
+                    Instant.ofEpochSecond(4000)
+                ),
+                listOf(ReservationStatus.PENDING)
+            )
+        )
+
+        Assertions.assertEquals(
+            newResults.first(),
+            reservationCurrentStatus.copy(status = ReservationStatus.ACCEPTED)
+        )
     }
 }

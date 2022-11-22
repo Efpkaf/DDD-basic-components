@@ -6,6 +6,14 @@ import java.util.*
 
 interface RoomReservationRepository : CrudRepository<RoomReservationsAggregate, String> {
 
-    fun findRoomByReservations(reservationId: UUID): RoomReservationsAggregate
+    @Query(
+        """
+        select room from RoomReservationsAggregate room JOIN FETCH room.reservations reservation 
+        WHERE reservation.id = :id 
+    """
+    //
+    // ^It is not working and I have no idea why...
+    )
+    fun findRoomReservationsAggregateByReservationsId(id: UUID ): RoomReservationsAggregate
 
 }

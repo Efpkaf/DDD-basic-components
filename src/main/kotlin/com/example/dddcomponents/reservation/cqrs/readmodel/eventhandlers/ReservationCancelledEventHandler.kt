@@ -13,7 +13,7 @@ data class ReservationCancelledEventHandler(
 
     @TransactionalEventListener
     fun handle(event: ReservationCancelled) {
-        val reservation = reservationStatusRepository.findByIdOrNull(event.id.toString())
+        val reservation = reservationStatusRepository.findByIdOrNull(event.id)
         reservation?.cancel()
     }
 }

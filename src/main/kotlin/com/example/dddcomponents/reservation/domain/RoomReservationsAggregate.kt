@@ -3,6 +3,7 @@ package com.example.dddcomponents.reservation.domain
 import com.example.dddcomponents.sharedKernel.DomainEvent
 import com.example.dddcomponents.user.Actor
 import com.example.dddcomponents.user.ActorType
+import org.hibernate.annotations.Type
 import org.springframework.data.domain.DomainEvents
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -18,7 +19,7 @@ class RoomReservationsAggregate(@Id val roomId: String) {
     @Transient
     val domainEvents: MutableList<DomainEvent> = LinkedList()
 
-    @OneToMany(cascade = [CascadeType.ALL])
+    @OneToMany(cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
     var reservations: MutableList<ReservationEntity> = LinkedList()
 
     fun add(reservation: ReservationEntity) {
@@ -156,6 +157,7 @@ class RoomReservationsAggregate(@Id val roomId: String) {
     @Entity
     class ReservationEntity(
         @Id
+        @Type(type = "org.hibernate.type.UUIDCharType")
         var id: UUID,
         var owner: Actor,
         var timeRange: TimeRange,
