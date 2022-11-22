@@ -1,4 +1,4 @@
-package com.example.dddcomponents.reservation.switch
+package com.example.dddcomponents.reservation.roomswitch
 
 import com.trendyol.kediatr.Command
 import java.util.*

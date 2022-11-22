@@ -1,4 +1,4 @@
-package com.example.dddcomponents.reservation.switch
+package com.example.dddcomponents.reservation.roomswitch
 
 import com.example.dddcomponents.reservation.ReservationService
 import com.example.dddcomponents.reservation.RoomReservationRepository
