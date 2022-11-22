@@ -1,4 +1,4 @@
-package com.example.dddcomponents.reservation.cqrs.commands.switch
+package com.example.dddcomponents.reservation.cqrs.commands.roomswitch
 
 import com.example.dddcomponents.reservation.domain.ReservationService
 import com.example.dddcomponents.reservation.domain.RoomReservationRepository
