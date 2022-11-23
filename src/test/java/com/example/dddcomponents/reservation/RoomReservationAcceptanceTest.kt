@@ -2,15 +2,15 @@ package com.example.dddcomponents.reservation
 
 import com.example.dddcomponents.reservation.cqrs.commands.accept.AcceptReservationCommand
 import com.example.dddcomponents.reservation.cqrs.commands.accept.handler.AcceptReservationCommandHandler
+import com.example.dddcomponents.reservation.cqrs.commands.cancel.CancelReservationCommand
+import com.example.dddcomponents.reservation.cqrs.commands.cancel.handler.CancelReservationCommandHandler
 import com.example.dddcomponents.reservation.cqrs.commands.request.RequestReservationCommand
 import com.example.dddcomponents.reservation.cqrs.commands.request.handler.RequestReservationCommandHandler
 import com.example.dddcomponents.reservation.cqrs.commands.room.CreateRoomCommand
 import com.example.dddcomponents.reservation.cqrs.commands.room.CreateRoomCommandHandler
 import com.example.dddcomponents.reservation.cqrs.queries.list.GetReservationsForTimeQuery
 import com.example.dddcomponents.reservation.cqrs.queries.list.GetReservationsForTimeQueryHandler
-import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationCurrentStatus
 import com.example.dddcomponents.reservation.cqrs.readmodel.ReservationStatus
-import com.example.dddcomponents.reservation.domain.RoomReservationRepository
 import com.example.dddcomponents.reservation.domain.RoomReservationsAggregate.ReservationEntity.OccurrencePolicy
 import com.example.dddcomponents.reservation.domain.TimeRange
 import com.example.dddcomponents.user.Actor
@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.Instant
 import java.util.*
-import javax.transaction.Transactional
 
 @SpringBootTest
 open class RoomReservationAcceptanceTest {
@@ -36,6 +35,9 @@ open class RoomReservationAcceptanceTest {
 
     @Autowired
     lateinit var acceptReservationCommandHandler: AcceptReservationCommandHandler
+
+    @Autowired
+    lateinit var cancelReservationCommandHandler: CancelReservationCommandHandler
 
     @Test
     open fun testProcess() {
@@ -75,6 +77,10 @@ open class RoomReservationAcceptanceTest {
             )
         )
 
+        cancelReservationCommandHandler.handle(CancelReservationCommand(
+            reservationCurrentStatus.id,
+            user
+        ))
 
         val newResults = getReservationsForTimeQueryHandler.handle(
             GetReservationsForTimeQuery(
@@ -89,7 +95,7 @@ open class RoomReservationAcceptanceTest {
 
         Assertions.assertEquals(
             newResults.first(),
-            reservationCurrentStatus.copy(status = ReservationStatus.ACCEPTED)
+            reservationCurrentStatus.copy(status = ReservationStatus.CANCELLED)
         )
     }
 }
